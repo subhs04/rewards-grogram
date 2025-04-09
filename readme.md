@@ -45,7 +45,7 @@ App starts at: `http://localhost:8080`
 
 ---
 
-## 🧪 Access H2 Console (Optional)
+## 🧪 Access H2 Console
 
 - URL: `http://localhost:8080/h2-console`
 
