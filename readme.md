@@ -22,6 +22,9 @@ This app uses an in-memory H2 database and exposes REST APIs to fetch total and 
 - Retrieve **monthly reward points** for a customer
 - Input validation and custom exception handling
 - Sample transaction data loaded via `import.sql`
+- Flow : Sample data loaded during application start up .
+  Sample data consists of 5 customers transaction over a period of three months . 
+  Rest Api's to fetch rewards point earned by a customer per month and in total
 
 ---
 
@@ -41,7 +44,7 @@ mvn clean install
 mvn spring-boot:run
 ```
 
-App starts at: `http://localhost:8080`
+Appliation  starts at: `http://localhost:8080`
 
 ---
 
