@@ -1,51 +1,70 @@
 package com.rewards.rewards.program.controller;
 
 
-import com.rewards.rewards.program.model.UserRewardsResponse;
+import com.rewards.rewards.program.exception.CustomerNotFoundException;
 import com.rewards.rewards.program.service.RewardsService;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.http.ResponseEntity;
+import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.hamcrest.Matchers.containsString;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
+
+@WebMvcTest(RewardsController.class)
 class RewardsControllerTest {
 
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
     private RewardsService rewardsService;
 
-    @InjectMocks
-    private RewardsController rewardsController;
+    @Test
+    void totalRewardsEarnedSuccess() throws Exception {
+        Mockito.when(rewardsService.getOverallTotal("CUST001")).thenReturn(150.0);
 
-    public RewardsControllerTest() {
-        MockitoAnnotations.openMocks(this); // initialize mocks
+        mockMvc.perform(get("/api/v1/rewards/CUST001"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.custId").value("CUST001"))
+                .andExpect(jsonPath("$.totalRewardPointsEarned").value(150.0));
     }
 
     @Test
-    void testTotalRewardsEarned_validCustId_returnsResponse() {
-        String custId = "CUST001";
-        when(rewardsService.getOverallTotal(custId)).thenReturn(200.0);
-
-        ResponseEntity<UserRewardsResponse> response = rewardsController.totalRewardsEarned(custId);
-
-        assertEquals(200.0, response.getBody().getTotalRewardPointsEarned());
-        assertEquals("CUST001", response.getBody().getCustId());
-        assertEquals(200, response.getStatusCodeValue());
+    void totalRewardsEarnedInvalidCustId() throws Exception {
+        mockMvc.perform(get("/api/v1/rewards/123"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(containsString("Validation failed")));
     }
 
     @Test
-    void testRewardPointsMonthWise_validInputs_returnsResponse() {
-        String custId = "CUST001";
-        String month = "3";
-        when(rewardsService.getMonthlyTotal(custId, Integer.valueOf(month))).thenReturn(75.0);
+    void rewardPointsMonthWiseSuccess() throws Exception {
+        Mockito.when(rewardsService.getMonthlyTotal("CUST001", 3)).thenReturn(75.0);
 
-        ResponseEntity<UserRewardsResponse> response = rewardsController.rewardPointsMonthWise(custId, month);
+        mockMvc.perform(get("/api/v1/rewards/CUST001/3"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.custId").value("CUST001"))
+                .andExpect(jsonPath("$.totalRewardPointsEarned").value(75.0));
+    }
 
-        assertEquals(75.0, response.getBody().getTotalRewardPointsEarned());
-        assertEquals("CUST001", response.getBody().getCustId());
-        assertEquals(200, response.getStatusCodeValue());
+    @Test
+    void rewardPointsMonthWiseInvalidMonth() throws Exception {
+        mockMvc.perform(get("/api/v1/rewards/CUST001/13")) // invalid month
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(containsString("Validation failed")));
+    }
+
+    @Test
+    void totalRewardsEarnedCustomerNotFound() throws Exception {
+        Mockito.when(rewardsService.getOverallTotal("uttttta"))
+                .thenThrow(new CustomerNotFoundException("Customer not found: uttttta"));
+
+        mockMvc.perform(get("/api/v1/rewards/uttttta"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string(containsString("Customer not found: uttttta")));
     }
 }
